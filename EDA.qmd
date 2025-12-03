@@ -16,10 +16,80 @@ library("tidyverse")
 ```{r}
 # read in data
 
-mobile_data <- read_csv("diabetes_binary_health_indicators_BRFSS2015.csv") |>
-  rename(
-  ) |>
+db_data <- read_csv("diabetes_binary_health_indicators_BRFSS2015.csv") |>
   mutate(
+    Diabetes_binary = factor(Diabetes_binary,
+                          levels = c(0,1,2),
+                          labels = c("No diabetes", "Prediabetes", "Diabetes")),
+    
+    HighBP = factor(HighBP,
+                    levels = c(0,1),
+                    labels = c("No high BP", "High BP")),
+    
+    HighChol = factor(HighChol,
+                      levels = c(0,1),
+                      labels = c("No high cholesterol", "High cholesterol")),
+    
+    CholCheck = factor(CholCheck,
+                       levels = c(0,1),
+                       labels = c("No cholesterol check", "Checked cholesterol")),
+    
+    Smoker = factor(Smoker,
+                    levels = c(0,1),
+                    labels = c("Non-smoker", "Smoker")),
+    
+    Stroke = factor(Stroke,
+                    levels = c(0,1),
+                    labels = c("No stroke", "Stroke")),
+    
+    HeartDiseaseorAttack = factor(HeartDiseaseorAttack,
+                                  levels = c(0,1),
+                                  labels = c("No CHD/MI", "CHD or MI")),
+    
+    PhysActivity = factor(PhysActivity,
+                          levels = c(0,1),
+                          labels = c("No physical activity", "Physically active")),
+    
+    Fruits = factor(Fruits,
+                    levels = c(0,1),
+                    labels = c("No fruit consumed", "Fruit consumed")),
+    
+     Veggies = factor(Veggies, levels = c(0,1),
+                     labels = c("No veggies consumed", "Veggies consumed")),
+
+    HvyAlcoholConsump = factor(HvyAlcoholConsump, levels = c(0,1),
+                               labels = c("Not heavy drinker", "Heavy drinker")),
+
+    AnyHealthcare = factor(AnyHealthcare, levels = c(0,1),
+                           labels = c("No healthcare", "Has healthcare")),
+
+    NoDocbcCost = factor(NoDocbcCost, levels = c(0,1),
+                         labels = c("Did not avoid care due to cost", "Avoided care due to cost")),
+
+    DiffWalk = factor(DiffWalk, levels = c(0,1),
+                      labels = c("No difficulty walking", "Difficulty walking")),
+
+    Sex = factor(Sex, levels = c(0,1),
+                 labels = c("Female", "Male")),
+
+    GenHlth = factor(GenHlth, levels = c(1,2,3,4,5),
+                     labels = c("Excellent", "Very good", "Good", "Fair", "Poor"),
+                     ordered = TRUE),
+
+    Age = factor(Age, levels = 1:13, 
+                 labels = c("18-24", "25-29", "30-34", "35-39", "40-44", "45-49",
+                            "50-54", "55-59", "60-64", "65-69", "70-74", "75-79", "80+"),
+                 ordered = TRUE),
+
+    Education = factor(Education, levels = 1:6, 
+                       labels = c("No school", "Grades 1-8", "Grades 9-11","High school graduate",
+                                  "Some collegel","College graduate"), 
+                       ordered = TRUE),
+
+    Income = factor(Income, levels = 1:8, 
+                    labels = c("<10k", "<15k", "<20k", "<25k","<35k", "<50k","<75k","75k+"),
+                    ordered = TRUE)
+
   )
 ```
 
