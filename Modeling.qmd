@@ -8,29 +8,24 @@ editor: visual
 
 ## Introduction
 
-Recall based on our EDA we found the following predictors useful when diabetes status (Diabetes_binary) is 
-the response of interest. 
+Recall based on our EDA we found the following predictors useful when diabetes status (Diabetes_binary) is the response of interest:
 
--   **HighBP** Whether or not they have high blood pressure. We saw people with diabetes
-are more likely to have high BP
--   **HighChol** Whether or not they have high cholesterol. We saw people with diabetes
-are more likely to have high cholesterol
--   **BMI** People with diabetes have a higher BMI on average
--   **Age** Younger people are less likely than older people to have diabetes
--   **GenHlth** Self reported health score with 1 being excellent 5 being poor. People 
-with diabetes tend to rank their general health lower than people without diabetes.
+-   **HighBP** Whether or not they have high blood pressure. We saw people with diabetes are more likely to have high BP.
+-   **HighChol** Whether or not they have high cholesterol. We saw people with diabetes are more likely to have high cholesterol.
+-   **BMI** People with diabetes have a higher BMI on average.
+-   **Age** Younger people are less likely than older people to have diabetes.
+-   **GenHlth** Self reported health score with 1 being excellent 5 being poor. People with diabetes tend to rank their general health more poorly than people without diabetes.
 
-
-Recall based on our EDA we found
+As a result they will be the five variables we include in our modeling done below.
 
 ```{r}
 # packages needed
 library("tidyverse")
 library("tidymodels")
+library("ranger")
 ```
 
-We will follow the process for reading in our data as in the EDA where we use mutate()
-and factor to get our variables as the correct type. We do not drop variables here. 
+We will follow the process for reading in our data as in the EDA where we use mutate() and factor to get our variables as the correct type. We do not drop variables here.
 
 ```{r}
 # read in data
@@ -121,13 +116,120 @@ db_data <- read_csv("diabetes_binary_health_indicators_BRFSS2015.csv") |>
   )
 ```
 
+Now we need to split the data for modeling. Per Dr. Post's request we will do a 70/30 split and a five fold CV. Splitting on Diabetes_binary To ensure reproducibility I set the seed to 67 (my mom was born in 1967).
 
+```{r}
+# seed
+set.seed(67)
+
+#split
+data_split <- initial_split(db_data, prop = 0.70, strata = Diabetes_binary)
+train_data <- training(data_split)
+test_data  <- testing(data_split)
+
+# CV folds
+db_cv_folds <- vfold_cv(train_data, 5)
+
+```
 
 ## Classification Tree
 
+Classification trees are just regression trees where the response is categorical. So what is a regression tree? A regression tree INSERT
+
+```{r}
+# create recipe
+tree_rec <- recipe(Diabetes_binary ~ HighBP + HighChol + BMI + Age + GenHlth, data = train_data) 
+tree_rec
+
+# model and engine, complexity we will tune
+tree_mod <- decision_tree( cost_complexity = tune()) |>
+  set_engine("rpart") |>
+  set_mode("classification")
+
+# workflow
+tree_wkf <- workflow() |>
+  add_recipe(tree_rec) |>
+  add_model(tree_mod)
+
+# grid for tuning complexity parameter (5 levels tested) based on our folds using log 
+# loss as specified
+tree_grid <- grid_regular(
+  cost_complexity(), 
+  levels = 5
+)
+
+tree_fits <- tree_wkf |> 
+  tune_grid(resamples = db_cv_folds,
+            grid = tree_grid,
+            metrics   = metric_set(mn_log_loss))
+
+# grab parameter w/ the best (lowest) log loss
+best_tree <- select_best(tree_fits, metric = "mn_log_loss")
+
+# finalize work flow 
+final_tree_wf<- finalize_workflow(tree_wkf, best_tree)
+
+
+```
 
 ## Random Forest
 
+Description INSERT
 
+```{r}
+# recipe, note same as before redefining for clarity
+rf_rec <- recipe(Diabetes_binary ~ HighBP + HighChol + BMI + Age + GenHlth,
+                 data = train_data)
+
+# model and engine mtry we will tune
+rf_mod <- rand_forest(
+  mtry  = tune()) |>
+  set_engine("ranger") |>
+  set_mode("classification")
+
+# workflow
+rf_wkf <- workflow() |>
+  add_recipe(rf_rec) |>
+  add_model(rf_mod)
+
+# grid for tuning mtry parameter range given we have 5 predictor variables
+# (x levels) based on our folds using log 
+# loss as specified
+rf_grid <- grid_regular(
+  mtry(range = c(1, 5)),
+  levels = 5                 
+)
+
+rf_fits <- rf_wkf |>
+  tune_grid(
+    resamples = db_cv_folds,
+    grid      = rf_grid,
+    metrics   = metric_set(mn_log_loss) 
+  )
+
+# grab parameter w/ the best (lowest) log loss
+best_rf <- rf_fits |>
+  select_best(metric = "mn_log_loss")
+
+# finalize work flow fit to training data 
+rf_final_wf <- finalize_workflow(rf_wkf, best_rf)
+
+```
 
 ## Final Model Selection
+
+Finally lets compare the two models using the test set to see which one we will choose!
+
+```{r}
+# fit best to training and then run on test set for tree
+final_tree_test <- last_fit(tree_final_wf, data_split, metrics = metric_set(mn_log_loss)) |>
+  collect_metrics()
+
+final_tree_test
+
+# fit best to training and then run on test set for forest
+final_rf_test <- last_fit(rf_final_wf, data_split, metrics = metric_set(mn_log_loss)) |>
+  collect_metrics()
+
+final_rf_test
+```
