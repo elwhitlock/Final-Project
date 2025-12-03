@@ -1,0 +1,25 @@
+---
+title: "EDA"
+format: html
+editor: visual
+---
+
+## Exploring the Data
+
+
+```{r}
+# packages needed
+
+library("tidyverse")
+```
+
+```{r}
+# read in data
+
+mobile_data <- read_csv("diabetes_binary_health_indicators_BRFSS2015.csv") |>
+  rename(
+  ) |>
+  mutate(
+  )
+```
+

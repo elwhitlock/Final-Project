@@ -1,0 +1,13 @@
+---
+title: "Modeling"
+format: html
+editor: visual
+---
+
+## Modeling the Data
+
+
+```{r}
+
+```
+
