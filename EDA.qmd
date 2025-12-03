@@ -6,21 +6,35 @@ editor: visual
 
 ## Exploring the Data
 
+# Introduction
+
+I will be exploring the Diabetes Health Indicators Dataset. The response variable of interest is **Diabetes_binary**, which tells us if an individual has no diabetes or not. The variables I would like to explore for this project are:
+
+-   **HighBP** whether or not they have high blood preasure
+-   **HighChol** whether or not they have high cholesterol
+-   **BMI**
+-   **Age**
+-   **GenHlth** self reported health score with 1 being excellent 5 being poor
+-   **Sex**
+-   **Smoker** whether or not they smoked at least 100 cigarettes in their life
+-   **HvyAlcoholConsump** adult men having more than 14 drinks per week and adult women having more than 7 drinks per week
+
 
 ```{r}
 # packages needed
-
 library("tidyverse")
 ```
 
+
+Reading in the data involves mutating variables that are coded as numbers and turning them into factors with the appropriate labels. Note I had to reference the codebook for the data to find the levels for a few of these variables. 
+
 ```{r}
 # read in data
-
 db_data <- read_csv("diabetes_binary_health_indicators_BRFSS2015.csv") |>
   mutate(
     Diabetes_binary = factor(Diabetes_binary,
-                          levels = c(0,1,2),
-                          labels = c("No diabetes", "Prediabetes", "Diabetes")),
+                          levels = c(0,1),
+                          labels = c("No diabetes", "Diabetes")),
     
     HighBP = factor(HighBP,
                     levels = c(0,1),
@@ -54,42 +68,109 @@ db_data <- read_csv("diabetes_binary_health_indicators_BRFSS2015.csv") |>
                     levels = c(0,1),
                     labels = c("No fruit consumed", "Fruit consumed")),
     
-     Veggies = factor(Veggies, levels = c(0,1),
+    Veggies = factor(Veggies, 
+                     levels = c(0,1),
                      labels = c("No veggies consumed", "Veggies consumed")),
 
-    HvyAlcoholConsump = factor(HvyAlcoholConsump, levels = c(0,1),
+    HvyAlcoholConsump = factor(HvyAlcoholConsump,
+                               levels = c(0,1),
                                labels = c("Not heavy drinker", "Heavy drinker")),
 
-    AnyHealthcare = factor(AnyHealthcare, levels = c(0,1),
+    AnyHealthcare = factor(AnyHealthcare, 
+                           levels = c(0,1),
                            labels = c("No healthcare", "Has healthcare")),
 
-    NoDocbcCost = factor(NoDocbcCost, levels = c(0,1),
+    NoDocbcCost = factor(NoDocbcCost, 
+                         levels = c(0,1),
                          labels = c("Did not avoid care due to cost", "Avoided care due to cost")),
 
-    DiffWalk = factor(DiffWalk, levels = c(0,1),
+    DiffWalk = factor(DiffWalk, 
+                      levels = c(0,1),
                       labels = c("No difficulty walking", "Difficulty walking")),
 
-    Sex = factor(Sex, levels = c(0,1),
+    Sex = factor(Sex, 
+                 levels = c(0,1),
                  labels = c("Female", "Male")),
 
-    GenHlth = factor(GenHlth, levels = c(1,2,3,4,5),
+    GenHlth = factor(GenHlth, 
+                     levels = c(1,2,3,4,5),
                      labels = c("Excellent", "Very good", "Good", "Fair", "Poor"),
                      ordered = TRUE),
 
-    Age = factor(Age, levels = 1:13, 
+    Age = factor(Age, 
+                 levels = 1:13, 
                  labels = c("18-24", "25-29", "30-34", "35-39", "40-44", "45-49",
                             "50-54", "55-59", "60-64", "65-69", "70-74", "75-79", "80+"),
                  ordered = TRUE),
 
-    Education = factor(Education, levels = 1:6, 
+    Education = factor(Education, 
+                       levels = 1:6, 
                        labels = c("No school", "Grades 1-8", "Grades 9-11","High school graduate",
                                   "Some collegel","College graduate"), 
                        ordered = TRUE),
 
-    Income = factor(Income, levels = 1:8, 
+    Income = factor(Income, 
+                    levels = 1:8, 
                     labels = c("<10k", "<15k", "<20k", "<25k","<35k", "<50k","<75k","75k+"),
                     ordered = TRUE)
 
   )
+
+# validate our data read in as desired
+glimpse(db_data)
+
+# check for missing values
+colSums(is.na(db_data))
+
 ```
+The data looks like it read in appropriately, I checked for missing values so we could account for them in our EDA where needed, fortunately it seems we do not have any.
+
+We will start by doing some summary statistics on our only numeric variable, BMI.
+
+```{r}
+# numeric summary BMI
+BMI_sum <- db_data |>
+  summarize(
+   meanBMI = mean(BMI),
+   sdBMI = sd(BMI)
+  )
+print(BMI_sum)
+
+```
+We see the average BMI is 28.38 which is considered 'overweight' according to outside resources I found online.
+
+What would happen if we summarize by our response variable, does weight vary with diabetes status?
+
+```{r}
+# numeric summary BMI by Diabetes_binary
+BMI_sum <- db_data |>
+  group_by(Diabetes_binary)|>
+  summarize(
+   meanBMI = mean(BMI),
+   sdBMI = sd(BMI)
+  )
+print(BMI_sum)
+
+```
+
+We see those who have no diabetes are slightly lower than the overall average at 27.81. Those who have diabetes are slightly higher at 31.94.
+
+Think about overall health lets now look at the contingency table for self reported general health scores.
+
+```{r}
+# contingency table GenHlth
+n_health <- table(db_data$GenHlth)
+n_health
+```
+Most people reported very good, while the least people reported poor.
+
+How does this change when we break it up by diabetes status?
+
+```{r}
+# contingency table GenHlth
+n_health_db <- table(db_data$GenHlth,db_data$Diabetes_binary)
+n_health_db
+```
+
+The overall pattern holds for those without diabetes but for those who do have it we see most people report good health, and the least people report excellent health. This indicates to us that those who have diabetes tend to feel worse about their general health.
 
