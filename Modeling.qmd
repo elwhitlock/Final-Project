@@ -8,13 +8,17 @@ editor: visual
 
 ## Introduction
 
-Recall based on our EDA we found the following predictors useful when diabetes status (Diabetes_binary) is the response of interest:
+Recall based on our EDA we found the following predictors useful when diabetes status 
+(Diabetes_binary) is the response of interest:
 
--   **HighBP** Whether or not they have high blood pressure. We saw people with diabetes are more likely to have high BP.
--   **HighChol** Whether or not they have high cholesterol. We saw people with diabetes are more likely to have high cholesterol.
+-   **HighBP** Whether or not they have high blood pressure. We saw people with diabetes
+are more likely to have high BP.
+-   **HighChol** Whether or not they have high cholesterol. We saw people with diabetes 
+are more likely to have high cholesterol.
 -   **BMI** People with diabetes have a higher BMI on average.
 -   **Age** Younger people are less likely than older people to have diabetes.
--   **GenHlth** Self reported health score with 1 being excellent 5 being poor. People with diabetes tend to rank their general health more poorly than people without diabetes.
+-   **GenHlth** Self reported health score with 1 being excellent 5 being poor. 
+People with diabetes tend to rank their general health more poorly than people without diabetes.
 
 As a result they will be the five variables we include in our modeling done below.
 
@@ -25,7 +29,8 @@ library("tidymodels")
 library("ranger")
 ```
 
-We will follow the process for reading in our data as in the EDA where we use mutate() and factor to get our variables as the correct type. We do not drop variables here.
+We will follow the same process for reading in our data as in the EDA where we use 
+mutate() and factor to get our variables as the correct type. We do not drop variables here.
 
 ```{r}
 # read in data
@@ -116,7 +121,9 @@ db_data <- read_csv("diabetes_binary_health_indicators_BRFSS2015.csv") |>
   )
 ```
 
-Now we need to split the data for modeling. Per Dr. Post's request we will do a 70/30 split and a five fold CV. Splitting on Diabetes_binary To ensure reproducibility I set the seed to 67 (my mom was born in 1967).
+Now we need to split the data for modeling. Per Dr. Post's request we will do a 70/30 split 
+and a five fold CV. Splitting on Diabetes_binary. To ensure reproducibility I set the seed 
+to 67 (my mom was born in 1967).
 
 ```{r}
 # seed
@@ -135,7 +142,11 @@ db_cv_folds <- vfold_cv(train_data, 5)
 ## Classification Tree
 
 Classification trees are a predictive modeling technique that 
-uses a series of binary splits on predictor variables to classify observations into groups. Splits are decided based on some metric that indicates improvement for example minimizing sum of squared errors. Note classification trees are regression trees with a categorical response. Both are easy to interpret, since they rely on visuals. However, they are high-variance models, meaning small changes in the data can lead to a very different tree.
+uses a series of binary splits on predictor variables to classify observations into groups. 
+Splits are decided based on some impurity metric. Note classification trees are regression 
+trees with a categorical response. Both are easy to interpret, since they rely on visuals.
+However, they are high-variance models, meaning small changes in the data can lead to a very different tree.
+Because of this I expect our random forest will perform better.
 
 ```{r}
 # create recipe
@@ -179,9 +190,11 @@ A random forest is an ensemble learning method that builds many classification
 trees and combines their results to produce a more stable and accurate model. 
 Each tree is trained on a bootstrap sample (sampling with replacement) of the data 
 like bagging. The difference is that at each split, only a random subset of predictors
-is considered. This randomness ensures the trees are less correlated with one another. 
-It aggregates the results to get final predictions. Because it averages many trees, a
-random forest has lower variance and than a single tree. 
+is considered. This randomness, in the sample and the predictors, ensures the trees are 
+less correlated with one another. It aggregates the results to get final predictions. 
+Because it averages many trees, a random forest has lower variance and than a single tree. 
+The random forest also uses an impurity metric to decide which tree to go with, like the
+classification tree.
 
 ```{r}
 # recipe, note same as before redefining for clarity
@@ -230,7 +243,8 @@ saveRDS(rf_final_fit, "rf_final_model.rds")
 
 ## Final Model Selection
 
-Finally lets compare the two models using the test set to see which one we will choose.
+Finally lets compare the two models by fitting on the training set and using the test set
+to see which one we will choose.
 
 ```{r}
 # fit best to training and then run on test set for tree
@@ -245,5 +259,5 @@ final_rf_test <- last_fit(rf_final_wf, data_split, metrics = metric_set(mn_log_l
 
 final_rf_test
 ```
-We see the mean log loss is slightly lower for the random forest so that will we
+We see the mean log loss is slightly lower for the random forest, .329 versus .331, so that will we
 our final model!

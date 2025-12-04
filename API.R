@@ -174,8 +174,9 @@ function() {
   )
   
   # we need ggplot2
-  autoplot(cm, type'"mosaic")
+  p <- autoplot(cm)  
+  print(p)           
+
 }
 
-# to run w/ given port (for links to be consistent)
 
