@@ -10,11 +10,14 @@ RUN apt-get update -qq && apt-get install -y  libssl-dev  libcurl4-gnutls-dev li
 # install plumber, GGally
 RUN R -e "install.packages(c('tidyverse','tidymodels','ranger', 'ggplot2'))"
 
+# set wd trouble shooting errors
+WORKDIR /app
+
 # copy API.R dataset and model from the current directory into the container
 # not everything is in project repo
 COPY API.R API.R
 COPY diabetes_binary_health_indicators_BRFSS2015.csv diabetes_binary_health_indicators_BRFSS2015.csv
-COPY rf_model.rds rf_model.rds
+COPY rf_final_model.rds rf_final_model.rds
 
 # open port to traffic
 EXPOSE 8385
