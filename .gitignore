@@ -21,6 +21,12 @@
 # RStudio files
 .Rproj.user/
 
+# ignore docker images
+# had to research this
+*.tar
+*.img
+*.sif
+
 # produced vignettes
 vignettes/*.html
 vignettes/*.pdf

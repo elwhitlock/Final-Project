@@ -151,7 +151,7 @@ function(
 #* @get /readme
 function(){
   list(name="Elle Whitlock",
-       link="")
+       link="elwhitlock.github.io/Final-Project/EDA.html")
 }
 
 
