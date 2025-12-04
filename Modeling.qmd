@@ -122,7 +122,7 @@ Now we need to split the data for modeling. Per Dr. Post's request we will do a 
 # seed
 set.seed(67)
 
-#split
+# split
 data_split <- initial_split(db_data, prop = 0.70, strata = Diabetes_binary)
 train_data <- training(data_split)
 test_data  <- testing(data_split)
@@ -134,7 +134,8 @@ db_cv_folds <- vfold_cv(train_data, 5)
 
 ## Classification Tree
 
-Classification trees are just regression trees where the response is categorical. So what is a regression tree? A regression tree INSERT
+Classification trees are a predictive modeling technique that 
+uses a series of binary splits on predictor variables to classify observations into groups. Splits are decided based on some metric that indicates improvement for example minimizing sum of squared errors. Note classification trees are regression trees with a categorical response. Both are easy to interpret, since they rely on visuals. However, they are high-variance models, meaning small changes in the data can lead to a very different tree.
 
 ```{r}
 # create recipe
@@ -161,7 +162,7 @@ tree_grid <- grid_regular(
 tree_fits <- tree_wkf |> 
   tune_grid(resamples = db_cv_folds,
             grid = tree_grid,
-            metrics   = metric_set(mn_log_loss))
+            metrics = metric_set(mn_log_loss))
 
 # grab parameter w/ the best (lowest) log loss
 best_tree <- select_best(tree_fits, metric = "mn_log_loss")
@@ -174,15 +175,23 @@ final_tree_wf<- finalize_workflow(tree_wkf, best_tree)
 
 ## Random Forest
 
-Description INSERT
+A random forest is an ensemble learning method that builds many classification 
+trees and combines their results to produce a more stable and accurate model. 
+Each tree is trained on a bootstrap sample (sampling with replacement) of the data 
+like bagging. The difference is that at each split, only a random subset of predictors
+is considered. This randomness ensures the trees are less correlated with one another. 
+It aggregates the results to get final predictions. Because it averages many trees, a
+random forest has lower variance and than a single tree. 
 
 ```{r}
 # recipe, note same as before redefining for clarity
-rf_rec <- recipe(Diabetes_binary ~ HighBP + HighChol + BMI + Age + GenHlth,
-                 data = train_data)
+rf_rec <- recipe(Diabetes_binary ~ HighBP + HighChol + BMI + Age + GenHlth, data = train_data)
 
 # model and engine mtry we will tune
+# i used the min_n and trees options to make the code run on my computer better, my lenovo does not have much memory
 rf_mod <- rand_forest(
+  trees = 300,
+  min_n = 5,
   mtry  = tune()) |>
   set_engine("ranger") |>
   set_mode("classification")
@@ -193,11 +202,10 @@ rf_wkf <- workflow() |>
   add_model(rf_mod)
 
 # grid for tuning mtry parameter range given we have 5 predictor variables
-# (x levels) based on our folds using log 
-# loss as specified
-rf_grid <- grid_regular(
+# with 3 random levels based on our folds using log loss as specified
+rf_grid <- grid_random(
   mtry(range = c(1, 5)),
-  levels = 5                 
+  size = 2
 )
 
 rf_fits <- rf_wkf |>
@@ -214,15 +222,19 @@ best_rf <- rf_fits |>
 # finalize work flow fit to training data 
 rf_final_wf <- finalize_workflow(rf_wkf, best_rf)
 
+# this is included to lessen weight off my computer for rerunning in API
+rf_final_fit <- fit(rf_final_wf, db_data)
+saveRDS(rf_final_fit, "rf_final_model.rds")
+
 ```
 
 ## Final Model Selection
 
-Finally lets compare the two models using the test set to see which one we will choose!
+Finally lets compare the two models using the test set to see which one we will choose.
 
 ```{r}
 # fit best to training and then run on test set for tree
-final_tree_test <- last_fit(tree_final_wf, data_split, metrics = metric_set(mn_log_loss)) |>
+final_tree_test <- last_fit(final_tree_wf, data_split, metrics = metric_set(mn_log_loss)) |>
   collect_metrics()
 
 final_tree_test
@@ -233,3 +245,5 @@ final_rf_test <- last_fit(rf_final_wf, data_split, metrics = metric_set(mn_log_l
 
 final_rf_test
 ```
+We see the mean log loss is slightly lower for the random forest so that will we
+our final model!
