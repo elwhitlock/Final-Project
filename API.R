@@ -1,9 +1,11 @@
 #API.R 
+# used Dr. Post's as temp
 
 # packages
 library("tidyverse")
 library("tidymodels")
 library("ranger")
+library("ggplot2")
 
 # read in data
 db_data <- read_csv("diabetes_binary_health_indicators_BRFSS2015.csv") |>
@@ -171,8 +173,8 @@ function() {
     estimate = .pred_class
   )
   
-  # simple base-R plot
-  plot(cm)
+  # we need ggplot2
+  autoplot(cm, type'"mosaic")
 }
 
 # to run w/ given port (for links to be consistent)

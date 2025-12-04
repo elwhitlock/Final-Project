@@ -1,3 +1,5 @@
+# used Dr. Post's as temp
+
 # start from the rstudio/plumber image
 FROM rstudio/plumber
 
@@ -6,7 +8,7 @@ RUN apt-get update -qq && apt-get install -y  libssl-dev  libcurl4-gnutls-dev li
   
   
 # install plumber, GGally
-RUN R -e "install.packages(c('tidyverse','tidymodels','ranger'))"
+RUN R -e "install.packages(c('tidyverse','tidymodels','ranger', 'ggplot2'))"
 
 # copy API.R dataset and model from the current directory into the container
 # not everything is in project repo
